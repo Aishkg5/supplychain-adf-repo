@@ -176,7 +176,24 @@
 															"queryTimeout": "02:00:00",
 															"partitionOption": "None"
 														},
-														"enableStaging": false
+														"sink": {
+															"type": "ParquetSink",
+															"storeSettings": {
+																"type": "AzureBlobFSWriteSettings"
+															},
+															"formatSettings": {
+																"type": "ParquetWriteSettings"
+															}
+														},
+														"enableStaging": false,
+														"translator": {
+															"type": "TabularTranslator",
+															"typeConversion": true,
+															"typeConversionSettings": {
+																"allowDataTruncation": true,
+																"treatBooleanAsNumber": false
+															}
+														}
 													},
 													"inputs": [
 														{
@@ -188,6 +205,22 @@
 																	"type": "Expression"
 																},
 																"ds_table": {
+																	"value": "@item().source_object_name",
+																	"type": "Expression"
+																}
+															}
+														}
+													],
+													"outputs": [
+														{
+															"referenceName": "ds_parquet",
+															"type": "DatasetReference",
+															"parameters": {
+																"ds_container": {
+																	"value": "@item().target_location",
+																	"type": "Expression"
+																},
+																"ds_file": {
 																	"value": "@item().source_object_name",
 																	"type": "Expression"
 																}
