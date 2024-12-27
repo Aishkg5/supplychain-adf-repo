@@ -491,7 +491,7 @@
 														"source": {
 															"type": "AzureSqlSource",
 															"sqlReaderQuery": {
-																"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name,'where ',item().watermark_column,' = ',item().watermark_value)",
+																"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name,'where ',item().watermark_column,' > ',item().watermark_value)",
 																"type": "Expression"
 															},
 															"queryTimeout": "02:00:00",
