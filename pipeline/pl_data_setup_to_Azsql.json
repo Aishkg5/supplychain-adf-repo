@@ -22,7 +22,8 @@
 							"ds_container": {
 								"value": "@pipeline().parameters.pl_p_container",
 								"type": "Expression"
-							}
+							},
+							"ds_filename": "''"
 						}
 					},
 					"fieldList": [
