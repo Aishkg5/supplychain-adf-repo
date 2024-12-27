@@ -288,14 +288,14 @@
 														"storedProcedureParameters": {
 															"copyDuration_in_secs": {
 																"value": {
-																	"value": "@activity('Copy data incremental load').output.copyDuration",
+																	"value": "@{activity('Copy data incremental load').output.executionDetails[0].duration}",
 																	"type": "Expression"
 																},
 																"type": "String"
 															},
 															"DataFactory_Name": {
 																"value": {
-																	"value": "@pipeline().DataFactory",
+																	"value": "@{pipeline().DataFactory}",
 																	"type": "Expression"
 																},
 																"type": "String"
@@ -309,21 +309,21 @@
 															},
 															"effectiveIntegrationRuntime": {
 																"value": {
-																	"value": "@activity('Copy data incremental load').output.effective",
+																	"value": "@{activity('Copy data incremental load').output.effectiveIntegrationRuntime}",
 																	"type": "Expression"
 																},
 																"type": "String"
 															},
 															"ErrorCode": {
 																"value": {
-																	"value": "@activity('Copy data incremental load').output.error.errorCode",
+																	"value": "@{activity('Copy data incremental load').output.errors[0].Code}",
 																	"type": "Expression"
 																},
 																"type": "String"
 															},
 															"ErrorDescription": {
 																"value": {
-																	"value": "@{activity('Copy data incremental load').output.error.message}",
+																	"value": "@{activity('Copy data incremental load').output.errors[0].message}",
 																	"type": "Expression"
 																},
 																"type": "String"
@@ -336,7 +336,10 @@
 																"type": "String"
 															},
 															"Execution_Status": {
-																"value": "",
+																"value": {
+																	"value": "@{activity('Copy data incremental load').output.executionDetails[0].status}",
+																	"type": "Expression"
+																},
 																"type": "String"
 															},
 															"FailureType": {
@@ -345,14 +348,14 @@
 															},
 															"Pipeline_Name": {
 																"value": {
-																	"value": "@pipeline().Pipeline",
+																	"value": "@{pipeline().Pipeline}",
 																	"type": "Expression"
 																},
 																"type": "String"
 															},
 															"RunId": {
 																"value": {
-																	"value": "@pipeline().RunId",
+																	"value": "@{pipeline().RunId}",
 																	"type": "Expression"
 																},
 																"type": "String"
@@ -380,28 +383,28 @@
 															},
 															"TriggerId": {
 																"value": {
-																	"value": "@pipeline().TriggerId",
+																	"value": "@{pipeline().TriggerId}",
 																	"type": "Expression"
 																},
 																"type": "String"
 															},
 															"TriggerName": {
 																"value": {
-																	"value": "@pipeline().TriggerName",
+																	"value": "@{pipeline().TriggerName}",
 																	"type": "Expression"
 																},
 																"type": "String"
 															},
 															"TriggerTime": {
 																"value": {
-																	"value": "@pipeline().TriggerTime",
+																	"value": "@{pipeline().TriggerTime}",
 																	"type": "Expression"
 																},
 																"type": "String"
 															},
 															"TriggerType": {
 																"value": {
-																	"value": "@pipeline().TriggerType",
+																	"value": "@{pipeline().TriggerType}",
 																	"type": "Expression"
 																},
 																"type": "String"
