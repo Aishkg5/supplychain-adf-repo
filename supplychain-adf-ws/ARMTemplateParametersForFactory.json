@@ -1,0 +1,27 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "supplychain-adf-ws"
+		},
+		"adls_accountKey": {
+			"value": ""
+		},
+		"ls_az_sql_db_password": {
+			"value": ""
+		},
+		"adls_properties_typeProperties_url": {
+			"value": "https://supplychainadlsacc.dfs.core.windows.net/"
+		},
+		"ls_az_sql_db_properties_typeProperties_server": {
+			"value": "medical-sql-db-server.database.windows.net"
+		},
+		"ls_az_sql_db_properties_typeProperties_database": {
+			"value": "hospital_database"
+		},
+		"ls_az_sql_db_properties_typeProperties_userName": {
+			"value": "sqladmin"
+		}
+	}
+}
