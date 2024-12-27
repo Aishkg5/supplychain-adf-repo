@@ -122,7 +122,7 @@
 									"referenceName": "ds_azure_sql_table",
 									"type": "DatasetReference",
 									"parameters": {
-										"ds_schema": "supplychain",
+										"ds_schema": "supplychains",
 										"ds_table": {
 											"value": "@split(item().name,'.' )[0]",
 											"type": "Expression"
