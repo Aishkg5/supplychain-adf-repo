@@ -6,7 +6,10 @@
 			"type": "LinkedServiceReference"
 		},
 		"parameters": {
-			"container": {
+			"ds_container": {
+				"type": "string"
+			},
+			"ds_filename": {
 				"type": "string"
 			}
 		},
@@ -15,8 +18,12 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().ds_filename",
+					"type": "Expression"
+				},
 				"fileSystem": {
-					"value": "@dataset().container",
+					"value": "@dataset().ds_container",
 					"type": "Expression"
 				}
 			},

@@ -19,7 +19,7 @@
 						"referenceName": "ds_csv",
 						"type": "DatasetReference",
 						"parameters": {
-							"container": {
+							"ds_container": {
 								"value": "@pipeline().parameters.pl_p_container",
 								"type": "Expression"
 							}
@@ -88,8 +88,12 @@
 									"referenceName": "ds_csv",
 									"type": "DatasetReference",
 									"parameters": {
-										"container": {
+										"ds_container": {
 											"value": "@pipeline().parameters.pl_p_container",
+											"type": "Expression"
+										},
+										"ds_filename": {
+											"value": "@item()",
 											"type": "Expression"
 										}
 									}
