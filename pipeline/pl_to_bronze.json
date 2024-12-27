@@ -436,11 +436,17 @@
 														"storedProcedureName": "[dbo].[sp_UpdateLogTable]",
 														"storedProcedureParameters": {
 															"CopyActivity_End_Time": {
-																"value": "",
+																"value": {
+																	"value": "@{utcNow()}",
+																	"type": "Expression"
+																},
 																"type": "String"
 															},
 															"CopyActivity_queuingDuration_in_secs": {
-																"value": "",
+																"value": {
+																	"value": "@{activity('Copy data incremental load').output.executionDetails[0].detailedDurations.queuingDuration}",
+																	"type": "Expression"
+																},
 																"type": "String"
 															},
 															"CopyActivity_Start_Time": {
