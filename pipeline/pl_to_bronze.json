@@ -57,56 +57,66 @@
 					},
 					"activities": [
 						{
-							"name": "full load or incremental load check",
+							"name": "file or table check",
 							"type": "IfCondition",
 							"dependsOn": [],
 							"userProperties": [],
 							"typeProperties": {
-								"expression": {
-									"value": "@equals(item().load_type,'incremental')",
-									"type": "Expression"
-								},
-								"ifFalseActivities": [
+								"ifTrueActivities": [
 									{
-										"name": "Copy data full load",
-										"type": "Copy",
+										"name": "full load or incremental load check",
+										"type": "IfCondition",
 										"dependsOn": [],
-										"policy": {
-											"timeout": "0.12:00:00",
-											"retry": 0,
-											"retryIntervalInSeconds": 30,
-											"secureOutput": false,
-											"secureInput": false
-										},
 										"userProperties": [],
 										"typeProperties": {
-											"source": {
-												"type": "AzureSqlSource",
-												"sqlReaderQuery": {
-													"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name)",
-													"type": "Expression"
-												},
-												"queryTimeout": "02:00:00",
-												"partitionOption": "None"
+											"expression": {
+												"value": "@equals(toLower(item().load_type),'incremental')",
+												"type": "Expression"
 											},
-											"enableStaging": false
-										},
-										"inputs": [
-											{
-												"referenceName": "ds_azure_sql_table",
-												"type": "DatasetReference",
-												"parameters": {
-													"ds_schema": {
-														"value": "@item().source_object_schema",
-														"type": "Expression"
+											"ifFalseActivities": [
+												{
+													"name": "Copy data full load",
+													"type": "Copy",
+													"dependsOn": [],
+													"policy": {
+														"timeout": "0.12:00:00",
+														"retry": 0,
+														"retryIntervalInSeconds": 30,
+														"secureOutput": false,
+														"secureInput": false
 													},
-													"ds_table": {
-														"value": "@item().source_object_name",
-														"type": "Expression"
-													}
+													"userProperties": [],
+													"typeProperties": {
+														"source": {
+															"type": "AzureSqlSource",
+															"sqlReaderQuery": {
+																"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name)",
+																"type": "Expression"
+															},
+															"queryTimeout": "02:00:00",
+															"partitionOption": "None"
+														},
+														"enableStaging": false
+													},
+													"inputs": [
+														{
+															"referenceName": "ds_azure_sql_table",
+															"type": "DatasetReference",
+															"parameters": {
+																"ds_schema": {
+																	"value": "@item().source_object_schema",
+																	"type": "Expression"
+																},
+																"ds_table": {
+																	"value": "@item().source_object_name",
+																	"type": "Expression"
+																}
+															}
+														}
+													]
 												}
-											}
-										]
+											]
+										}
 									}
 								]
 							}
