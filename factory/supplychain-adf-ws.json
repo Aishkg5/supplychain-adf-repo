@@ -1,0 +1,9 @@
+{
+	"name": "supplychain-adf-ws",
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "e3a20dac-ec0f-443d-9178-2ef495acf881",
+		"tenantId": "0fc8a057-8abc-41da-8107-634959075991"
+	}
+}
