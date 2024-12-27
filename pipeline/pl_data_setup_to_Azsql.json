@@ -84,7 +84,9 @@
 								"sink": {
 									"type": "AzureSqlSink",
 									"writeBehavior": "insert",
-									"sqlWriterUseTableLock": false
+									"sqlWriterUseTableLock": false,
+									"tableOption": "autoCreate",
+									"disableMetricsCollection": false
 								},
 								"enableStaging": false,
 								"translator": {
@@ -115,7 +117,14 @@
 							"outputs": [
 								{
 									"referenceName": "ds_azure_sql_table",
-									"type": "DatasetReference"
+									"type": "DatasetReference",
+									"parameters": {
+										"ds_schema": "supplychain",
+										"ds_table": {
+											"value": "@split(item(),'.' )[0]",
+											"type": "Expression"
+										}
+									}
 								}
 							]
 						}
