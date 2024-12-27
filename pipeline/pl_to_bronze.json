@@ -343,7 +343,7 @@
 																"type": "String"
 															},
 															"FailureType": {
-																"value": "",
+																"value": "@{activity('Copy data incremental load').output.errors[0].Code}",
 																"type": "String"
 															},
 															"Pipeline_Name": {
