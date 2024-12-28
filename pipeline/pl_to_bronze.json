@@ -16,24 +16,13 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "AzureSqlSource",
-						"sqlReaderQuery": "select * from supplychains.control where indicator =1;",
+						"type": "SqlServerSource",
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
 					},
 					"dataset": {
-						"referenceName": "ds_azure_sql_table",
-						"type": "DatasetReference",
-						"parameters": {
-							"ds_schema": {
-								"value": "@pipeline().parameters.pl_p_schema",
-								"type": "Expression"
-							},
-							"ds_table": {
-								"value": "@pipeline().parameters.pl_p_table",
-								"type": "Expression"
-							}
-						}
+						"referenceName": "ds_SqlServerTable",
+						"type": "DatasetReference"
 					},
 					"firstRowOnly": false
 				}
@@ -231,7 +220,10 @@
 																"type": "String"
 															},
 															"FailureType": {
-																"value": "@{activity('Copy data incremental load').output.errors[0].Code}",
+																"value": {
+																	"value": "@{activity('Copy data incremental load').output.errors[0].Code}",
+																	"type": "Expression"
+																},
 																"type": "String"
 															},
 															"Pipeline_Name": {
@@ -664,7 +656,10 @@
 																"type": "String"
 															},
 															"FailureType": {
-																"value": "@{activity('Copy data incremental load').output.errors[0].Code}",
+																"value": {
+																	"value": "@{activity('Copy data incremental load').output.errors[0].Code}",
+																	"type": "Expression"
+																},
 																"type": "String"
 															},
 															"Pipeline_Name": {
@@ -918,7 +913,8 @@
 		],
 		"parameters": {
 			"pl_p_schema": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "supplychains"
 			},
 			"pl_p_table": {
 				"type": "string"
