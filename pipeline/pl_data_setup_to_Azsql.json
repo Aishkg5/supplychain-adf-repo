@@ -62,7 +62,7 @@
 					"isSequential": false,
 					"activities": [
 						{
-							"name": "Copy data to Azsql",
+							"name": "Copy data to SSMS",
 							"type": "Copy",
 							"dependsOn": [],
 							"policy": {
