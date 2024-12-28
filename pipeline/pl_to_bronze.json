@@ -563,7 +563,7 @@
 												{
 													"type": "Query",
 													"text": {
-														"value": "@concat('update ',item().source_object_schema,'.control set watermark_value = (select max(',item().watermark_column,') from ',item().source_object_schema,'.',item().source_object_name,' ) where watermark_column = ',string(item().watermark_column) )",
+														"value": "@concat('update ',item().source_object_schema,'.control set watermark_value = (select max(',item().watermark_column,') from ',item().source_object_schema,'.',item().source_object_name,' ) where watermark_column = ','''',item().watermark_column,'''')",
 														"type": "Expression"
 													}
 												}
