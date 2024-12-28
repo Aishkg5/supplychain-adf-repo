@@ -92,15 +92,7 @@
 									"tableOption": "autoCreate",
 									"disableMetricsCollection": false
 								},
-								"enableStaging": false,
-								"translator": {
-									"type": "TabularTranslator",
-									"typeConversion": true,
-									"typeConversionSettings": {
-										"allowDataTruncation": true,
-										"treatBooleanAsNumber": false
-									}
-								}
+								"enableStaging": false
 							},
 							"inputs": [
 								{
@@ -113,19 +105,6 @@
 										},
 										"ds_filename": {
 											"value": "@item().name",
-											"type": "Expression"
-										}
-									}
-								}
-							],
-							"outputs": [
-								{
-									"referenceName": "ds_azure_sql_table",
-									"type": "DatasetReference",
-									"parameters": {
-										"ds_schema": "supplychains",
-										"ds_table": {
-											"value": "@split(item().name,'.' )[0]",
 											"type": "Expression"
 										}
 									}
