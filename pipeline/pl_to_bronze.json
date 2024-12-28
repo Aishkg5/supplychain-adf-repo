@@ -60,7 +60,7 @@
 					},
 					"activities": [
 						{
-							"name": "full load or incremental load check_copy1",
+							"name": "full load or incremental load check",
 							"type": "IfCondition",
 							"dependsOn": [],
 							"userProperties": [],
@@ -139,7 +139,7 @@
 										]
 									},
 									{
-										"name": "full load error_copy1_copy1",
+										"name": "full load error",
 										"type": "SqlServerStoredProcedure",
 										"dependsOn": [
 											{
@@ -294,7 +294,7 @@
 										}
 									},
 									{
-										"name": "fullload update log_copy1_copy1",
+										"name": "fullload update log",
 										"type": "SqlServerStoredProcedure",
 										"dependsOn": [
 											{
@@ -530,7 +530,7 @@
 										]
 									},
 									{
-										"name": "update water mark value_copy1",
+										"name": "update water mark value",
 										"type": "Script",
 										"dependsOn": [
 											{
@@ -566,7 +566,7 @@
 										}
 									},
 									{
-										"name": "incremental error_copy1",
+										"name": "incremental error",
 										"type": "SqlServerStoredProcedure",
 										"dependsOn": [
 											{
@@ -721,7 +721,7 @@
 										}
 									},
 									{
-										"name": "incremental update log_copy1",
+										"name": "incremental update log",
 										"type": "SqlServerStoredProcedure",
 										"dependsOn": [
 											{
