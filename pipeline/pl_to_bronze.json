@@ -733,7 +733,7 @@
 														}
 													},
 													"linkedServiceName": {
-														"referenceName": "ls_az_sql_db",
+														"referenceName": "ls_ssms",
 														"type": "LinkedServiceReference"
 													}
 												},
