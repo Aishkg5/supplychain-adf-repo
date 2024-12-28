@@ -17,12 +17,26 @@
 				"typeProperties": {
 					"source": {
 						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "select * from supplychains.control where indicator=1;",
+							"type": "Expression"
+						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
 					},
 					"dataset": {
 						"referenceName": "ds_SqlServerTable",
-						"type": "DatasetReference"
+						"type": "DatasetReference",
+						"parameters": {
+							"ds_schema": {
+								"value": "@pipeline().parameters.pl_p_schema",
+								"type": "Expression"
+							},
+							"ds_table": {
+								"value": "@pipeline().parameters.pl_p_table",
+								"type": "Expression"
+							}
+						}
 					},
 					"firstRowOnly": false
 				}
