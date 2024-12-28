@@ -330,7 +330,7 @@
 													},
 													"userProperties": [],
 													"typeProperties": {
-														"storedProcedureName": "[dbo].[sp_UpdateLogTable]",
+														"storedProcedureName": "[supplychains].[sp_UpdateLogTable]",
 														"storedProcedureParameters": {
 															"CopyActivity_End_Time": {
 																"value": {
@@ -475,7 +475,7 @@
 														}
 													},
 													"linkedServiceName": {
-														"referenceName": "ls_az_sql_db",
+														"referenceName": "ls_ssms",
 														"type": "LinkedServiceReference"
 													}
 												}
