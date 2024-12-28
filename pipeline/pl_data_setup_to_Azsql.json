@@ -86,13 +86,19 @@
 									}
 								},
 								"sink": {
-									"type": "AzureSqlSink",
+									"type": "SqlServerSink",
 									"writeBehavior": "insert",
-									"sqlWriterUseTableLock": false,
-									"tableOption": "autoCreate",
-									"disableMetricsCollection": false
+									"sqlWriterUseTableLock": false
 								},
-								"enableStaging": false
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
 							},
 							"inputs": [
 								{
@@ -105,6 +111,19 @@
 										},
 										"ds_filename": {
 											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_SqlServerTable",
+									"type": "DatasetReference",
+									"parameters": {
+										"ds_schema": "supplychains",
+										"ds_table": {
+											"value": "@split(item().name,'.')[0]",
 											"type": "Expression"
 										}
 									}
