@@ -229,7 +229,7 @@
 															},
 															"FailureType": {
 																"value": {
-																	"value": "@{activity('Copy data incremental load').output.errors[0].Code}",
+																	"value": "@{activity('Copy data full load').output.errors[0].Code}",
 																	"type": "Expression"
 																},
 																"type": "String"
