@@ -682,7 +682,7 @@
 													"source": {
 														"type": "SqlServerSource",
 														"sqlReaderQuery": {
-															"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name,'where ',item().watermark_column,' > ',item().watermark_value)",
+															"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name,' where ',item().watermark_column,'> ',item().watermark_value)",
 															"type": "Expression"
 														},
 														"queryTimeout": "02:00:00",
@@ -762,7 +762,7 @@
 														{
 															"type": "Query",
 															"text": {
-																"value": "@concat('update ',item().source_object_schema,'.control set watermark_value = (select max(',item().watermark_column,') from ',item().source_object_schema,'.',item().source_object_name,' ) where watermark_column = ',''',item().watermark_column,''' )",
+																"value": "@concat('update ',item().source_object_schema,'.control set watermark_value = (select max(',item().watermark_column,') from ',item().source_object_schema,'.',item().source_object_name,' ) where watermark_column = ','''item().watermark_column''' )",
 																"type": "Expression"
 															}
 														}
