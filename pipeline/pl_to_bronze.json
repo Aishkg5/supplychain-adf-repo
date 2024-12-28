@@ -757,6 +757,7 @@
 													},
 													"userProperties": [],
 													"typeProperties": {
+														"storedProcedureName": "[supplychains].[sp_UpdateLogTable]",
 														"storedProcedureParameters": {
 															"CopyActivity_End_Time": {
 																"value": {
