@@ -495,11 +495,8 @@
 													"userProperties": [],
 													"typeProperties": {
 														"source": {
-															"type": "AzureSqlSource",
-															"sqlReaderQuery": {
-																"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name,'where ',item().watermark_column,' > ',item().watermark_value)",
-																"type": "Expression"
-															},
+															"type": "SqlServerSource",
+															"sqlReaderQuery": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name,'where ',item().watermark_column,' > ',item().watermark_value)",
 															"queryTimeout": "02:00:00",
 															"partitionOption": "None"
 														},
@@ -524,17 +521,11 @@
 													},
 													"inputs": [
 														{
-															"referenceName": "ds_azure_sql_table",
+															"referenceName": "ds_SqlServerTable",
 															"type": "DatasetReference",
 															"parameters": {
-																"ds_schema": {
-																	"value": "@item().source_object_schema",
-																	"type": "Expression"
-																},
-																"ds_table": {
-																	"value": "@item().source_object_name",
-																	"type": "Expression"
-																}
+																"ds_schema": "@item().source_object_schema",
+																"ds_table": "@item().source_object_name"
 															}
 														}
 													],
