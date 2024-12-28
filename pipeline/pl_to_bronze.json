@@ -85,7 +85,10 @@
 										"typeProperties": {
 											"source": {
 												"type": "SqlServerSource",
-												"sqlReaderQuery": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name)",
+												"sqlReaderQuery": {
+													"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name)",
+													"type": "Expression"
+												},
 												"queryTimeout": "02:00:00",
 												"partitionOption": "None"
 											},
@@ -479,7 +482,10 @@
 										"typeProperties": {
 											"source": {
 												"type": "SqlServerSource",
-												"sqlReaderQuery": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name,'where ',item().watermark_column,' > ',item().watermark_value)",
+												"sqlReaderQuery": {
+													"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name,' where ',item().watermark_column,'> ',item().watermark_value)",
+													"type": "Expression"
+												},
 												"queryTimeout": "02:00:00",
 												"partitionOption": "None"
 											},
