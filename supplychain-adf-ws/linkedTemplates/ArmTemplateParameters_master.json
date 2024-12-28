@@ -8,20 +8,20 @@
 		"adls_accountKey": {
 			"value": ""
 		},
-		"ls_az_sql_db_password": {
+		"ls_ssms_password": {
 			"value": ""
 		},
 		"adls_properties_typeProperties_url": {
 			"value": "https://supplychainadlsacc.dfs.core.windows.net/"
 		},
-		"ls_az_sql_db_properties_typeProperties_server": {
-			"value": "medical-sql-db-server.database.windows.net"
+		"ls_ssms_properties_typeProperties_server": {
+			"value": "localhost\\SQLEXPRESS"
 		},
-		"ls_az_sql_db_properties_typeProperties_database": {
-			"value": "hospital_database"
+		"ls_ssms_properties_typeProperties_database": {
+			"value": "master"
 		},
-		"ls_az_sql_db_properties_typeProperties_userName": {
-			"value": "sqladmin"
+		"ls_ssms_properties_typeProperties_userName": {
+			"value": "ssmsuseradf"
 		},
 		"containerUri": {
 			"value": ""

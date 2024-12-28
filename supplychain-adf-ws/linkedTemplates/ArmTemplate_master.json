@@ -11,25 +11,25 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'adls'"
 		},
-		"ls_az_sql_db_password": {
+		"ls_ssms_password": {
 			"type": "secureString",
-			"metadata": "Secure string for 'password' of 'ls_az_sql_db'"
+			"metadata": "Secure string for 'password' of 'ls_ssms'"
 		},
 		"adls_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://supplychainadlsacc.dfs.core.windows.net/"
 		},
-		"ls_az_sql_db_properties_typeProperties_server": {
+		"ls_ssms_properties_typeProperties_server": {
 			"type": "string",
-			"defaultValue": "medical-sql-db-server.database.windows.net"
+			"defaultValue": "localhost\\SQLEXPRESS"
 		},
-		"ls_az_sql_db_properties_typeProperties_database": {
+		"ls_ssms_properties_typeProperties_database": {
 			"type": "string",
-			"defaultValue": "hospital_database"
+			"defaultValue": "master"
 		},
-		"ls_az_sql_db_properties_typeProperties_userName": {
+		"ls_ssms_properties_typeProperties_userName": {
 			"type": "string",
-			"defaultValue": "sqladmin"
+			"defaultValue": "ssmsuseradf"
 		},
 		"containerUri": {
 			"type": "string",
@@ -61,20 +61,20 @@
 					"adls_accountKey": {
 						"value": "[parameters('adls_accountKey')]"
 					},
-					"ls_az_sql_db_password": {
-						"value": "[parameters('ls_az_sql_db_password')]"
+					"ls_ssms_password": {
+						"value": "[parameters('ls_ssms_password')]"
 					},
 					"adls_properties_typeProperties_url": {
 						"value": "[parameters('adls_properties_typeProperties_url')]"
 					},
-					"ls_az_sql_db_properties_typeProperties_server": {
-						"value": "[parameters('ls_az_sql_db_properties_typeProperties_server')]"
+					"ls_ssms_properties_typeProperties_server": {
+						"value": "[parameters('ls_ssms_properties_typeProperties_server')]"
 					},
-					"ls_az_sql_db_properties_typeProperties_database": {
-						"value": "[parameters('ls_az_sql_db_properties_typeProperties_database')]"
+					"ls_ssms_properties_typeProperties_database": {
+						"value": "[parameters('ls_ssms_properties_typeProperties_database')]"
 					},
-					"ls_az_sql_db_properties_typeProperties_userName": {
-						"value": "[parameters('ls_az_sql_db_properties_typeProperties_userName')]"
+					"ls_ssms_properties_typeProperties_userName": {
+						"value": "[parameters('ls_ssms_properties_typeProperties_userName')]"
 					}
 				}
 			},

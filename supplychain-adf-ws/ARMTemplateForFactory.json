@@ -11,25 +11,25 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'adls'"
 		},
-		"ls_az_sql_db_password": {
+		"ls_ssms_password": {
 			"type": "secureString",
-			"metadata": "Secure string for 'password' of 'ls_az_sql_db'"
+			"metadata": "Secure string for 'password' of 'ls_ssms'"
 		},
 		"adls_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://supplychainadlsacc.dfs.core.windows.net/"
 		},
-		"ls_az_sql_db_properties_typeProperties_server": {
+		"ls_ssms_properties_typeProperties_server": {
 			"type": "string",
-			"defaultValue": "medical-sql-db-server.database.windows.net"
+			"defaultValue": "localhost\\SQLEXPRESS"
 		},
-		"ls_az_sql_db_properties_typeProperties_database": {
+		"ls_ssms_properties_typeProperties_database": {
 			"type": "string",
-			"defaultValue": "hospital_database"
+			"defaultValue": "master"
 		},
-		"ls_az_sql_db_properties_typeProperties_userName": {
+		"ls_ssms_properties_typeProperties_userName": {
 			"type": "string",
-			"defaultValue": "sqladmin"
+			"defaultValue": "ssmsuseradf"
 		}
 	},
 	"variables": {
@@ -102,7 +102,7 @@
 							"isSequential": false,
 							"activities": [
 								{
-									"name": "Copy data to Azsql",
+									"name": "Copy data to SSMS",
 									"type": "Copy",
 									"dependsOn": [],
 									"policy": {
@@ -126,11 +126,9 @@
 											}
 										},
 										"sink": {
-											"type": "AzureSqlSink",
+											"type": "SqlServerSink",
 											"writeBehavior": "insert",
-											"sqlWriterUseTableLock": false,
-											"tableOption": "autoCreate",
-											"disableMetricsCollection": false
+											"sqlWriterUseTableLock": false
 										},
 										"enableStaging": false,
 										"translator": {
@@ -160,12 +158,12 @@
 									],
 									"outputs": [
 										{
-											"referenceName": "ds_azure_sql_table",
+											"referenceName": "ds_SqlServerTable",
 											"type": "DatasetReference",
 											"parameters": {
 												"ds_schema": "supplychains",
 												"ds_table": {
-													"value": "@split(item().name,'.' )[0]",
+													"value": "@split(item().name,'.')[0]",
 													"type": "Expression"
 												}
 											}
@@ -194,7 +192,972 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/ds_csv')]",
-				"[concat(variables('factoryId'), '/datasets/ds_azure_sql_table')]"
+				"[concat(variables('factoryId'), '/datasets/ds_SqlServerTable')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_to_bronze')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "control table lookup",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"sqlReaderQuery": {
+									"value": "select * from supplychains.control where indicator=1;",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_SqlServerTable",
+								"type": "DatasetReference",
+								"parameters": {
+									"ds_schema": {
+										"value": "@pipeline().parameters.pl_p_schema",
+										"type": "Expression"
+									},
+									"ds_table": {
+										"value": "@pipeline().parameters.pl_p_table",
+										"type": "Expression"
+									}
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "ForEach table",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "control table lookup",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('control table lookup').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "full load or incremental load check",
+									"type": "IfCondition",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@equals(toLower(item().load_type),'incremental')",
+											"type": "Expression"
+										},
+										"ifFalseActivities": [
+											{
+												"name": "Copy data full load",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "SqlServerSource",
+														"sqlReaderQuery": {
+															"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name)",
+															"type": "Expression"
+														},
+														"queryTimeout": "02:00:00",
+														"partitionOption": "None"
+													},
+													"sink": {
+														"type": "ParquetSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "ParquetWriteSettings"
+														}
+													},
+													"enableStaging": false,
+													"translator": {
+														"type": "TabularTranslator",
+														"typeConversion": true,
+														"typeConversionSettings": {
+															"allowDataTruncation": true,
+															"treatBooleanAsNumber": false
+														}
+													}
+												},
+												"inputs": [
+													{
+														"referenceName": "ds_SqlServerTable",
+														"type": "DatasetReference",
+														"parameters": {
+															"ds_schema": "@item().source_object_schema",
+															"ds_table": {
+																"value": "@item().source_object_name",
+																"type": "Expression"
+															}
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "ds_parquet",
+														"type": "DatasetReference",
+														"parameters": {
+															"ds_container": {
+																"value": "@item().target_location",
+																"type": "Expression"
+															},
+															"ds_file": {
+																"value": "@item().source_object_name",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											},
+											{
+												"name": "full load error",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "Copy data full load",
+														"dependencyConditions": [
+															"Failed"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[[supplychains].[sp_UpdateErrorTable]",
+													"storedProcedureParameters": {
+														"copyDuration_in_secs": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.executionDetails[0].duration}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"DataFactory_Name": {
+															"value": {
+																"value": "@{pipeline().DataFactory}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Destination": {
+															"value": {
+																"value": "@item().target_location",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"effectiveIntegrationRuntime": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.output.effectiveIntegrationRuntime}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"ErrorCode": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.errors[0].Code}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"ErrorDescription": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.errors[0].message}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"ErrorLoggedTime": {
+															"value": {
+																"value": "@utcNow()",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Execution_Status": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.executionDetails[0].status}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"FailureType": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.errors[0].Code}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Pipeline_Name": {
+															"value": {
+																"value": "@{pipeline().Pipeline}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"RunId": {
+															"value": {
+																"value": "@{pipeline().RunId}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Sink_Type": {
+															"value": {
+																"value": "@item().file_format",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Source": {
+															"value": {
+																"value": "@item().source_object_name",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Source_Type": {
+															"value": {
+																"value": "item().source_object_type",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerId": {
+															"value": {
+																"value": "@{pipeline().TriggerId}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerName": {
+															"value": {
+																"value": "@{pipeline().TriggerName}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerTime": {
+															"value": {
+																"value": "@{pipeline().TriggerTime}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerType": {
+															"value": {
+																"value": "@{pipeline().TriggerType}",
+																"type": "Expression"
+															},
+															"type": "String"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "ls_ssms",
+													"type": "LinkedServiceReference"
+												}
+											},
+											{
+												"name": "fullload update log",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "Copy data full load",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[[supplychains].[sp_UpdateLogTable]",
+													"storedProcedureParameters": {
+														"CopyActivity_End_Time": {
+															"value": {
+																"value": "@{utcNow()}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"CopyActivity_queuingDuration_in_secs": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.executionDetails[0].detailedDurations.queuingDuration}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"CopyActivity_Start_Time": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.executionDetails[0].start}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"CopyActivity_transferDuration_in_secs": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.executionDetails[0].detailedDurations.transferDuration}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"copyDuration_in_secs": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.executionDetails[0].duration}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"DataFactory_Name": {
+															"value": {
+																"value": "@{pipeline().DataFactory}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"DataRead": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.rowsRead}",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
+														"Destination": {
+															"value": {
+																"value": "@item().target_location",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"effectiveIntegrationRuntime": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.effectiveIntegrationRuntime}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Execution_Status": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.executionDetails[0].status}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Pipeline_Name": {
+															"value": {
+																"value": "@{pipeline().Pipeline}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"rowsCopied": {
+															"value": {
+																"value": "@{activity('Copy data full load').output.rowsCopied}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"RunID": {
+															"value": {
+																"value": "@{pipeline().RunId}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Sink_Type": {
+															"value": {
+																"value": "@item().file_format",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Source": {
+															"value": {
+																"value": "@item().source_object_name",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Source_Type": {
+															"value": {
+																"value": "@item().source_object_type",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerId": {
+															"value": {
+																"value": "@{pipeline().TriggerId}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerName": {
+															"value": {
+																"value": "@{pipeline().TriggerName}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerTime": {
+															"value": {
+																"value": "@{pipeline().TriggerTime}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerType": {
+															"value": {
+																"value": "@{pipeline().TriggerType}",
+																"type": "Expression"
+															},
+															"type": "String"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "ls_ssms",
+													"type": "LinkedServiceReference"
+												}
+											}
+										],
+										"ifTrueActivities": [
+											{
+												"name": "Copy data incremental load",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "SqlServerSource",
+														"sqlReaderQuery": {
+															"value": "@concat('select * from ',item().source_object_schema,'.',item().source_object_name,'where ',item().watermark_column,' > ',item().watermark_value)",
+															"type": "Expression"
+														},
+														"queryTimeout": "02:00:00",
+														"partitionOption": "None"
+													},
+													"sink": {
+														"type": "ParquetSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "ParquetWriteSettings"
+														}
+													},
+													"enableStaging": false,
+													"translator": {
+														"type": "TabularTranslator",
+														"typeConversion": true,
+														"typeConversionSettings": {
+															"allowDataTruncation": true,
+															"treatBooleanAsNumber": false
+														}
+													}
+												},
+												"inputs": [
+													{
+														"referenceName": "ds_SqlServerTable",
+														"type": "DatasetReference",
+														"parameters": {
+															"ds_schema": "@item().source_object_schema",
+															"ds_table": "@item().source_object_name"
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "ds_parquet",
+														"type": "DatasetReference",
+														"parameters": {
+															"ds_container": {
+																"value": "@item().target_location",
+																"type": "Expression"
+															},
+															"ds_file": {
+																"value": "@item().source_object_name",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											},
+											{
+												"name": "update water mark value",
+												"type": "Script",
+												"dependsOn": [
+													{
+														"activity": "Copy data incremental load",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"linkedServiceName": {
+													"referenceName": "ls_ssms",
+													"type": "LinkedServiceReference"
+												},
+												"typeProperties": {
+													"scripts": [
+														{
+															"type": "Query",
+															"text": {
+																"value": "@concat('update ',item().source_object_schema,'.control set watermark_value = (select max(',item().watermark_column,') from ',item().source_object_schema,'.',item().source_object_name,' ) where watermark_column = ',''',item().watermark_column,''' )",
+																"type": "Expression"
+															}
+														}
+													],
+													"scriptBlockExecutionTimeout": "02:00:00"
+												}
+											},
+											{
+												"name": "incremental error",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "Copy data incremental load",
+														"dependencyConditions": [
+															"Failed"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[[supplychains].[sp_UpdateErrorTable]",
+													"storedProcedureParameters": {
+														"copyDuration_in_secs": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.executionDetails[0].duration}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"DataFactory_Name": {
+															"value": {
+																"value": "@{pipeline().DataFactory}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Destination": {
+															"value": {
+																"value": "@item().target_location",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"effectiveIntegrationRuntime": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.effectiveIntegrationRuntime}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"ErrorCode": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.errors[0].Code}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"ErrorDescription": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.errors[0].message}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"ErrorLoggedTime": {
+															"value": {
+																"value": "@utcNow()",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Execution_Status": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.executionDetails[0].status}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"FailureType": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.errors[0].Code}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Pipeline_Name": {
+															"value": {
+																"value": "@{pipeline().Pipeline}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"RunId": {
+															"value": {
+																"value": "@{pipeline().RunId}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Sink_Type": {
+															"value": {
+																"value": "@item().file_format",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Source": {
+															"value": {
+																"value": "@item().source_object_name",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Source_Type": {
+															"value": {
+																"value": "item().source_object_type",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerId": {
+															"value": {
+																"value": "@{pipeline().TriggerId}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerName": {
+															"value": {
+																"value": "@{pipeline().TriggerName}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerTime": {
+															"value": {
+																"value": "@{pipeline().TriggerTime}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerType": {
+															"value": {
+																"value": "@{pipeline().TriggerType}",
+																"type": "Expression"
+															},
+															"type": "String"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "ls_ssms",
+													"type": "LinkedServiceReference"
+												}
+											},
+											{
+												"name": "incremental update log",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "Copy data incremental load",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[[supplychains].[sp_UpdateLogTable]",
+													"storedProcedureParameters": {
+														"CopyActivity_End_Time": {
+															"value": {
+																"value": "@{utcNow()}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"CopyActivity_queuingDuration_in_secs": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.executionDetails[0].detailedDurations.queuingDuration}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"CopyActivity_Start_Time": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.executionDetails[0].start}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"CopyActivity_transferDuration_in_secs": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.executionDetails[0].detailedDurations.transferDuration}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"copyDuration_in_secs": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.executionDetails[0].duration}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"DataFactory_Name": {
+															"value": {
+																"value": "@{pipeline().DataFactory}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"DataRead": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.rowsRead}",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
+														"Destination": {
+															"value": {
+																"value": "@item().target_location",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"effectiveIntegrationRuntime": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.effectiveIntegrationRuntime}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Execution_Status": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.executionDetails[0].status}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Pipeline_Name": {
+															"value": {
+																"value": "@{pipeline().Pipeline}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"rowsCopied": {
+															"value": {
+																"value": "@{activity('Copy data incremental load').output.rowsCopied}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"RunID": {
+															"value": {
+																"value": "@{pipeline().RunId}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Sink_Type": {
+															"value": {
+																"value": "@item().file_format",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Source": {
+															"value": {
+																"value": "@item().source_object_name",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"Source_Type": {
+															"value": {
+																"value": "@item().source_object_type",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerId": {
+															"value": {
+																"value": "@{pipeline().TriggerId}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerName": {
+															"value": {
+																"value": "@{pipeline().TriggerName}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerTime": {
+															"value": {
+																"value": "@{pipeline().TriggerTime}",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"TriggerType": {
+															"value": {
+																"value": "@{pipeline().TriggerType}",
+																"type": "Expression"
+															},
+															"type": "String"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "ls_ssms",
+													"type": "LinkedServiceReference"
+												}
+											}
+										]
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"pl_p_schema": {
+						"type": "string",
+						"defaultValue": "supplychains"
+					},
+					"pl_p_table": {
+						"type": "string",
+						"defaultValue": "control"
+					}
+				},
+				"folder": {
+					"name": "Bronze"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_SqlServerTable')]",
+				"[concat(variables('factoryId'), '/datasets/ds_parquet')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_ssms')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_SqlServerTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_ssms",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"ds_schema": {
+						"type": "string"
+					},
+					"ds_table": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "SqlServerTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().ds_schema",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().ds_table",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_ssms')]"
 			]
 		},
 		{
@@ -240,6 +1203,45 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/ds_parquet')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "adls",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"ds_container": {
+						"type": "string"
+					},
+					"ds_file": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().ds_file",
+							"type": "Expression"
+						},
+						"fileSystem": {
+							"value": "@dataset().ds_container",
+							"type": "Expression"
+						}
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/adls')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/adls')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -257,61 +1259,42 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/ls_az_sql_db')]",
+			"name": "[concat(parameters('factoryName'), '/ls_ssms')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
-				"type": "AzureSqlDatabase",
+				"type": "SqlServer",
 				"typeProperties": {
-					"server": "[parameters('ls_az_sql_db_properties_typeProperties_server')]",
-					"database": "[parameters('ls_az_sql_db_properties_typeProperties_database')]",
+					"server": "[parameters('ls_ssms_properties_typeProperties_server')]",
+					"database": "[parameters('ls_ssms_properties_typeProperties_database')]",
 					"encrypt": "mandatory",
 					"trustServerCertificate": true,
 					"authenticationType": "SQL",
-					"userName": "[parameters('ls_az_sql_db_properties_typeProperties_userName')]",
+					"userName": "[parameters('ls_ssms_properties_typeProperties_userName')]",
 					"password": {
 						"type": "SecureString",
-						"value": "[parameters('ls_az_sql_db_password')]"
-					}
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/ds_azure_sql_table')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "ls_az_sql_db",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"ds_schema": {
-						"type": "string"
-					},
-					"ds_table": {
-						"type": "string"
+						"value": "[parameters('ls_ssms_password')]"
 					}
 				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": {
-						"value": "@dataset().ds_schema",
-						"type": "Expression"
-					},
-					"table": {
-						"value": "@dataset().ds_table",
-						"type": "Expression"
-					}
+				"connectVia": {
+					"referenceName": "shir",
+					"type": "IntegrationRuntimeReference"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/ls_az_sql_db')]"
+				"[concat(variables('factoryId'), '/integrationRuntimes/shir')]"
 			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/shir')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "SelfHosted",
+				"typeProperties": {}
+			},
+			"dependsOn": []
 		}
 	]
 }
